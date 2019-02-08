@@ -172,7 +172,7 @@
                 return true;
             }
             //ie 6/7/8
-            if (typeof(nodes) != 'object') {
+            if (typeof(nodes) !== 'object') {
                 return false;
             }
             // detect length and item
@@ -204,8 +204,7 @@
         },
         //
         ifEmpty: function (x) {
-            if (typeof x === 'undefined') return true;
-            else return x.length === 0 || x === null;
+            return typeof x === 'undefined' || x.length === 0 || x == null;
         },
         //
         ifCssJson: function (node) {
@@ -230,6 +229,7 @@
         // converts html string to [Object HTMLElement]
         stringToHtmlNode: function(html) {
             // creates temporary wrapper
+            //var tempElem = document.createElement('div');
             var tempElem = document.createElement('div');
             // insert html
             tempElem.innerHTML = html;
@@ -290,7 +290,7 @@
     Blues.help = {
         // add nodes to Object NodeList
         combineNodeLists: function(nodelist, newnodes) {
-            var tempArr = [];
+            var tempArr = new Array();
             if (nodelist) {
                 var nList = Blues.convert.nodeListToArray(nodelist);
                 for (var i = 0; i < nList.length; i++ ) {
@@ -329,10 +329,6 @@
     ///////////////////////////////////////////////////////
     // Blues DOM Methods
     Blues.dom = {
-        findElemByIdentifier: function(selector, context) {
-            var elem = context.getElementById(selector.substring(1));
-            return elem;
-        },
         // query selector all handler
         qsa: function(selector, incontext, incontextName) {
             var context = incontext || document;
@@ -346,15 +342,16 @@
             };
             if (Blues.check.ifSimpleSelector(selector)) {
                 // check if selector identifier
-                if (Blues.check.ifIdentifier(selector))
-                    elem = Blues.dom.findElemByIdentifier(selector, context);
+                if (Blues.check.ifIdentifier(selector)) {
+                    elem = context.getElementById(selector.substring(1));
+                }
                 // check if selector class
                 else if(Blues.check.ifClassname(selector)) {
                     elems = document.getElementsByClassName(selector.substring(1));
                     if (elems.length > 1) {
                         elem = [];
                         if (incontextName !== undefined) {
-                            for (var i=0; i < elems.length; i++) {
+                            for (var i = 0; i < elems.length; i++) {
                                 if (parents(elems[i], incontextName).length > 0)
                                     elem.push(elems[i]);
                             }
@@ -368,7 +365,7 @@
                     if (elems.length > 1) {
                         elem = [];
                         if (incontextName !== undefined) {
-                            for (var i=0; i < elems.length; i++) {
+                            for (i = 0; i < elems.length; i++) {
                                 if (parents(elems[i], incontextName).length > 0)
                                     elem.push(elems[i]);
                             }
@@ -381,7 +378,7 @@
                     if (elems.length > 1) {
                         elem = [];
                         if (incontextName !== undefined) {
-                            for (var i=0; i < elems.length; i++) {
+                            for (i = 0; i < elems.length; i++) {
                                 if (parents(elems[i], incontextName).length > 0)
                                     elem.push(elems[i]);
                             }
@@ -394,7 +391,7 @@
                     if (elems.length > 1) {
                         elem = [];
                         if (incontextName !== undefined) {
-                            for (var i=0; i < elems.length; i++) {
+                            for (i = 0; i < elems.length; i++) {
                                 if (parents(elems[i], incontextName).length > 0)
                                     elem.push(elems[i]);
                             }
@@ -490,64 +487,13 @@
     ///////////////////////////////////////////////////////
     // General Blues Selector -/ DOM GBS
     Blues.bzSel = function(selector) {
-        var elem = null, key = 0;
         if (!selector)
             return null;
-        else if (Blues.check.ifString(selector) && selector[ 0 ] !== "<") {
-            if (!Blues.check.ifWhitespaces(selector)) {
-                // check if single #id and return element
-                if (Blues.check.ifIdentifier(selector)) {
-                    elem = document.getElementById(selector.substring(1));
-                    return elem;
-                }
-                // check if single .class amd return element
-                if(Blues.check.ifClassname(selector))
-                    elem = document.querySelectorAll(selector);
-                // check if single tag and return element
-                if (Blues.check.ifValidTag(selector))
-                    elem = document.querySelectorAll(selector);
-                // check if single [name] and return element
-                if(Blues.check.ifElemName(selector)) {
-                    var name = Blues.extract.attrNameFromString(selector);
-                    elem = document.querySelectorAll(name);
-                }
-                // check if single attribute and return element
-                if (Blues.check.ifAttrName(selector) || selector.indexOf(',') > -1)
-                    elem = document.querySelectorAll(selector);
-            }
-            // handle context
-            else {
-                var selArray = selector.replace(/  +/g, ' ').split(' ');
-                var context = selArray[0];
-                if (Blues.check.ifIdentifier(context)) {
-                    var subcontext = '';
-                    for (var i = 1; i < selArray.length; i++)
-                        subcontext = subcontext + selArray[i] + ' ';
-                    var contextElem = document.getElementById(context.substring(1));
-                    elem = contextElem.querySelectorAll(subcontext);
-                } else
-                    elem = document.querySelectorAll(selector);
-            }
+        var el = Blues.dom.bluesSelector(selector);
+        if (Blues.check.ifNodeList(el)) {
+            el = Blues.convert.nodeListToArray(el);
         }
-        // if selector is Window or Document
-        else if (Blues.check.ifWindow(selector) ||
-            Blues.check.ifDocument(selector) ||
-            Blues.check.ifFunction(selector) ||
-            Object.getPrototypeOf(selector) === bzObject.prototype) {
-            elem = selector;
-            key = 1;
-        }
-        else if (Blues.check.ifString(selector) && selector[ 0 ] === "<" && selector[ selector.length - 1 ] === ">" && selector.length >= 3) {
-            elem = Blues.dom.createFragment(selector);
-        }
-        else return null;
-        if (Blues.check.ifNodeList(elem)) {
-            if (elem.length > 0)
-                elem = Blues.convert.nodeListToArray(elem);
-            if (elem.length === 1)
-                elem = elem[0];
-        }
-        return elem;
+        return el;
     };
     // element prototype
     var bzObject = function(selector) {
@@ -587,11 +533,14 @@
             element = new bzObject();
             element.el = selector;
         }
-        else if (Blues.check.ifWindow(selector) || Blues.check.ifDocument(selector)) {
+        else if (Blues.check.ifWindow(selector)) {
             element = new bzObject();
             element.el = selector;
         }
-        else
+        else if (Blues.check.ifDocument(selector)) {
+            element = new bzObject();
+            element.el = selector;
+        } else
             return null;
         // if bzDom is single dom node and not a window or document
         if (!Blues.check.ifWindow(element.el) &&
@@ -638,26 +587,6 @@
         } else return element;
     };
     /////- DHM -// DOM MANIPULATION (DOMM) ////////////
-    // extend one object with another
-    Blues.deepExtend = function (target, objects, deep){
-        for(var i = 0, ii = objects.length; i < ii; i++){
-            var obj = objects[i];
-            if(!Blues.check.ifObject(obj)) continue;
-            var keys = Object.keys(obj);
-            for(var j = 0, jj = keys.length; j < jj; j++){
-                var key = keys[j];
-                var val = obj[key];
-                if(Blues.check.ifObject(val) && deep)
-                    Blues.deepExtend(target[key], [val], true);
-                else
-                    target[key] = val;
-            }
-        }
-        return target;
-    };
-    Blues.extend = function (target, src){
-        return Blues.deepExtend(target, [src], false);
-    };
     // on document ready
     bzObject.prototype.ready = function(callback) {
         var ready = false;
@@ -706,17 +635,14 @@
     };
     // check if element exist
     bzObject.prototype.exist = function() {
-        if (this === undefined || this === null ||
-            this.el === undefined || this.el === null)
+        if (this === undefined || this === null || this.el === undefined || this.el === null) {
             return false;
-        if (this.el.length > 0 && (Blues.check.ifArray(this.el) || Blues.check.ifNodeList(this.el)))
-            return true;
-        // if (this.el) {
-        //     this.el.outerHTML === undefined || this.el.outerHTML === null
-        //     return false;
-        // }
-        if (this.el) {
-            if (this.el.outerHTML) return true;
+        } else {
+            if (this.el.length > 0 && (Blues.check.ifArray(this.el) || Blues.check.ifNodeList(this.el)))
+                return true;
+            if (this.el) {
+                if (this.el.outerHTML) return true;
+            }
         }
         return false;
     };
@@ -771,6 +697,11 @@
             atts[item.name] = item.value;
         });
         return atts;
+    };
+    bzObject.prototype.ifattr = function(name, value) {
+        var elem = this.el;
+        if (!value) return elem.hasAttribute(name);
+        else return elem.getAttribute(name) === value;
     };
     // get/set/check the element's attribute
     bzObject.prototype.onattr = function(name, value) {
@@ -1070,11 +1001,12 @@
             opacity = opacity - gap;
             elem.style.opacity = opacity;
             if(opacity <= 0) {
+                elem.style.opacity = 0;
                 // ToDo: check for browser compatibility
                 // var display = getComputedStyle(elem)['display'];
                 // if (display && display !== 'none')
-                //     this.display = display;
-                elem.style.display = 'none';
+                //     elem.style.display = display;
+                //elem.style.display = 'none';
                 window.clearInterval(fading);
                 callback;
             }
@@ -1093,17 +1025,16 @@
         if (duration === null)
             duration = 450;
         var gap = interval / duration;
-        elem.style.display = 'block';
-        elem.style.opacity = opacity;
         function fade() {
             opacity = opacity + gap;
             elem.style.opacity = opacity;
-            if(opacity >= 1) {
+            if (opacity >= 1) {
+                elem.style.opacity = 1;
                 window.clearInterval(fading);
                 callback;
             }
-
         }
+        //elem.style.display = 'block';
         var fading = window.setInterval(fade, interval);
         return this;
     };
@@ -1206,15 +1137,17 @@
             findingelem = elem.getElementById(selector.replace('#', ''));
         }
         else if (!Blues.check.ifWhitespaces(selector) && selector[0] === '.') {
-            //alert(selector);
-            findingelem = elem.getElementsByClassName(selector.replace('.', ''));
+            if (selector.split('.').length - 1 === 1)
+                findingelem = elem.getElementsByClassName(selector.replace('.', ''));
+            else
+                findingelem = elem.querySelectorAll(selector);
         } else if (!Blues.check.ifWhitespaces(selector) && Blues.check.ifElemName(selector)) {
             //alert('4' + elem.outerHTML);
             //ToDo: think of better way
             //findingelem = document.getElementsByName(extract.getAttrNameFromString(selector));
             findingelem = elem.querySelectorAll(selector);
         } else {
-            //alert('5');
+            //alert('5 ' + selector);
             findingelem = elem.querySelectorAll(selector);
         }
         var foundelem = new bzObject();
@@ -1386,6 +1319,21 @@
             eltodel.parentNode.removeChild(eltodel);
         }
     };
+    // scroll action
+    bzObject.prototype.scroll = function(callback, delay) {
+        var scrolling = false;
+        delay = delay || 250;
+        this.on('scroll', function() {
+            scrolling = true;
+        });
+        var interval = setInterval( function() {
+            if (scrolling) {
+                scrolling = false;
+                callback();
+                //clearInterval(interval);
+            }
+        }, delay);
+    };
     // get distance between element top/left side and
     // top/left side of the screen
     // according to the screen
@@ -1399,7 +1347,7 @@
         }
     };
     // check if element in viewport
-    bzObject.prototype.inViewport = function (elem) {
+    bzObject.prototype.inViewport = function () {
         //ToDo: check for browser compatibility
         var dist = this.el.getBoundingClientRect();
         return (
@@ -1523,6 +1471,207 @@
         if (elem.tagName.toLowerCase() === 'form')
             elem.submit();
         else return;
+    };
+    // Accordion
+    bzObject.prototype.accordion = function(options) {
+        var ac = {};
+        ac.acc = bzDom(this.el);
+        options = options || {};
+        ac.o = {};
+        ac.defaultOptions = {
+            on: 'click',
+            flag: true,
+            collapsible: true,
+            closeNested: true,
+            onClosing: undefined,
+            onClosed: undefined,
+            onOpening: undefined,
+            onOpened: undefined,
+            onChanging: undefined,
+            onChanged: undefined
+        };
+        for (var k in ac.defaultOptions) {
+            if (ac.defaultOptions.hasOwnProperty(k)) {
+                if (options.hasOwnProperty(k))
+                    ac.o[k] = options[k];
+                else
+                    ac.o[k] = ac.defaultOptions[k];
+            }
+        }
+        var trigs = ac.acc.find('.title'),
+            conts = ac.acc.find('.content');
+        conts.each(function (i, item) {
+            var $cont = bzDom(item),
+                contH = $cont.height() + 56;
+            $cont.ondata('height', contH);
+            $cont.ondata('item', i + 1);
+            $cont.oncss('height', '0');
+        });
+        ac.acts = {
+            closeActive: function(trig, topen, openh) {
+                if (ac.o.collapsible && ac.acc.find('.title.active').exist()) {
+                    if (bz.check.ifFunction(ac.o.onClosing))
+                        ac.o.onClosing();
+                    else if (bz.check.ifFunction(ac.o.onChanging))
+                        ac.o.onChanging();
+                    var actvTrig = ac.acc.find('.title.active'),
+                        actvCont = ac.acc.find('.content.active');
+                    actvTrig.offclass('active');
+                    actvCont.offclass('active');
+                    actvCont.oncss('height', '0');
+                    setTimeout(function() {
+                        if (bz.check.ifFunction(ac.o.onClosed))
+                            ac.o.onClosed();
+                        else if (bz.check.ifFunction(ac.o.onChanged))
+                            ac.o.onChanged();
+                    }, 501);
+                }
+                setTimeout(function() {
+                    topen.onclass('active');
+                    topen.oncss('height', openh + 'px');
+                    trig.toggleclass('active');
+                    setTimeout(function() {
+                        if (bz.check.ifFunction(ac.o.onOpened))
+                            ac.o.onOpened();
+                        else if (bz.check.ifFunction(ac.o.onChanged))
+                            ac.o.onChanged();
+                    }, 501);
+                }, 10);
+            },
+            addEvent: function(trig) {
+                trig.on(ac.o.on, function() {
+                    var $th = bzDom(this),
+                        id = $th.ondata('item'),
+                        $cont = $th.next('.content'),
+                        contH = $cont.ondata('height');
+                    if ($cont.ifclass('active')) {
+                        if (bz.check.ifFunction(ac.o.onClosing))
+                            ac.o.onClosing();
+                        else if (bz.check.ifFunction(ac.o.onChanging))
+                            ac.o.onChanging();
+                        $cont.offclass('active');
+                        $cont.oncss('height', '0');
+                        $th.toggleclass('active');
+                        setTimeout(function() {
+                            if (bz.check.ifFunction(ac.o.onClosed))
+                                ac.o.onClosed();
+                            else if (bz.check.ifFunction(ac.o.onChanged))
+                                ac.o.onChanged();
+                        }, 501);
+                    } else {
+                        if (bz.check.ifFunction(ac.o.onOpening))
+                            ac.o.onOpening();
+                        else if (bz.check.ifFunction(ac.o.onChanging))
+                            ac.o.onChanging();
+                        ac.acts.closeActive($th, $cont, contH);
+                    }
+                });
+            }
+        };
+        trigs.each(function(i, item) {
+            var $trig = bzDom(item);
+            $trig.ondata('item', i + 1);
+            if (!$trig.ifattr('disabled'))
+                ac.acts.addEvent($trig);
+            if ($trig.find('.info-icon').exist()) {
+                var icon = $trig.find('.info-icon'),
+                    _icon = icon.clone();
+                icon.remove();
+                var title = $trig.inhtml();
+                $trig.inhtml('');
+                var text = bzDom('<div class="text">');
+                $trig.append(_icon);
+                text.inhtml(title);
+                $trig.append(text);
+            }
+            if (ac.o.flag) {
+                var $flag = bzDom('<i class="flag-icon bz-transition bzi-chevron-down">');
+                $trig.append($flag);
+            }
+        });
+    };
+    //--> Blues Tabs
+    bzObject.prototype.tab = function(options) {
+        var tab = {};
+        tab.tab = bzDom(this.el);
+        options = options || {};
+        tab.o = {};
+        tab.defaultOptions = {
+            start: true,
+            on: 'click',
+            marker: 'bz-bc-primary',
+            open: undefined,
+            onLoading: undefined,
+            onOpened: undefined
+        };
+        for (var k in tab.defaultOptions) {
+            if (tab.defaultOptions.hasOwnProperty(k)) {
+                if (options.hasOwnProperty(k))
+                    tab.o[k] = options[k];
+                else
+                    tab.o[k] = tab.defaultOptions[k];
+            }
+        }
+        tab.tabs = tab.tab.find('.bz-tab');
+        tab.conts = bzDom('#' + tab.tab.ondata('tabs')).find('.bz-container');
+        tab.qty = tab.tabs.el.length;
+        var marker = bzDom('<div class="marker">'),
+            markerW;
+        markerW = 100 / tab.qty;
+        tab.acts = {
+            opentab: function(move, shift) {
+                shift = parseInt(shift);
+                if (tab.o.onLoading)
+                    tab.o.onLoading(shift, tab.conts.el[shift]);
+                tab.acts.movemarker(move, shift);
+                if (shift !== -1)
+                    tab.acts.opencont(shift);
+                if (tab.o.onOpened) {
+                    setTimeout(function() {
+                        tab.o.onOpened(shift, tab.conts.el[shift]);
+                    }, 501);
+                }
+            },
+            opencont: function(shift) {
+                tab.conts.each(function(j, item) {
+                    var $cont = bzDom(item);
+                    $cont.offclass('show');
+                    if (j == shift)
+                        if (!$cont.ifclass('show'))
+                            $cont.onclass('show');
+                });
+            },
+            movemarker: function(move, shift, marker) {
+                marker = marker || tab.tab.find('.marker');
+                marker.oncss('width', move + '%');
+                marker.oncss('left', move * shift + '%');
+            }
+        };
+        if (tab.o.open) {
+            var shift = parseInt(tab.o.open) - 1;
+            tab.acts.opentab(markerW, shift);
+        } else {
+            if (tab.o.marker)
+                marker.onclass(tab.o.marker);
+            tab.tab.append(marker);
+            tab.conts.each(function(i, item) {
+                var $cont = bzDom(item);
+                $cont.ondata('item', i + '');
+            });
+            tab.tabs.each(function(i, item) {
+                var $tab = bzDom(item);
+                $tab.ondata('item', i + '');
+                $tab.on('click', function() {
+                    var $self = bzDom(this),
+                        shift = $self.ondata('item');
+                    tab.acts.opentab(markerW, shift);
+                });
+            });
+            if (tab.o.start === true)
+                tab.acts.opentab(markerW, 0);
+            if (Number.isInteger(tab.o.start))
+                tab.acts.opentab(markerW, tab.o.start - 1);
+        }
     };
     // Blues Modal
     Blues.Modal = function(options) {
@@ -1698,9 +1847,9 @@
             options = Blues.convert.objectToArray(options);
             if (Blues.check.ifArray(options)) {
                 for (var i = 0; i < options.length; i++) {
-                    if (options[i][0] === 'width')
+                    if (options[i][0] == 'width')
                         width = options[i][1];
-                    if (options[i][0] === 'height')
+                    if (options[i][0] == 'height')
                         height = options[i][1];
                 }
             }
@@ -1823,7 +1972,6 @@
                         'attr': {
                             top: 0,
                             left: 0
-
                         }
                     },
                     '.bz-progress.right': {
@@ -1852,7 +2000,6 @@
             pr.append(bar);
         }
         //wrap.find('.bar').remove();
-
         var setTopBtm = function(side) {
             if (!pr.ifclass(side))
                 pr.onclass(side);
@@ -1934,7 +2081,6 @@
     };
     // add fader
     Blues.showfader = function(target, zindex) {
-        alert('works');
         var defTarget = '.bz-content-to-fade';
         if (target === null)
             target = defTarget;
@@ -2035,35 +2181,6 @@
             for (attr in attrs)
                 elem.setAttribute(attr, attrs[attr]);
         }
-        // set table
-        // if (s.tabledata) {
-        //     var tbldata = s.tabledata;
-        //     var row = null;
-        //     for (var row in tbldata) {
-        //         if (row === 'thead') {
-        //             var tr = document.createElement('thead');
-        //             var trdata = tbldata[row];
-        //             var col = null;
-        //             for (var col in trdata) {
-        //                 var td = document.createElement('td');
-        //                 td.innerHTML = col;
-        //                 tr.appendChild(td);
-        //             }
-        //             elem.appendChild(tr);
-        //         } else {
-        //             var tr = document.createElement('tr');
-        //             tr.setAttribute('iwe-item', row);
-        //             var trdata = tbldata[row];
-        //             var col = null;
-        //             for (var col in trdata) {
-        //                 var td = document.createElement('td');
-        //                 td.innerHTML = trdata[col];
-        //                 tr.appendChild(td);
-        //             }
-        //             elem.appendChild(tr);
-        //         }
-        //     }
-        // }
     };
     ////////////////////////////////////////////////////////////
     Blues.parseHTML = function(htmlString) {
@@ -2089,7 +2206,10 @@
                 text: "text/plain",
                 html: "text/html",
                 xml: "application/xml, text/xml",
-                json: "application/json, text/javascript"
+                json: "application/json, text/javascript",
+                jpeg: "image/jpeg",
+                png: "image/png"
+
             }
         };
         o = options || {};
@@ -2098,7 +2218,7 @@
         // set the async: @boolean true/false
         settings.async = o.async || settings.async;
         // set the Content-type: @string 'application/x-www-form-urlencoded'
-        settings.contentType = o.contentType || settings.contentType;
+        settings.contentType = o.contentType || null;
         // set Data-type
         settings.dataType = o.dataType || settings.dataType;
         // set the request url: @string '/controller/action'
@@ -2114,7 +2234,7 @@
         // request dataTypes
         var s = settings;
         function createRequest(type, url, async){
-            var xhr = typeof XMLHttpRequest !== 'undefined' ?
+            var xhr = typeof XMLHttpRequest != 'undefined' ?
                 new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
             xhr.open(type, url, async);
             return xhr;
@@ -2125,16 +2245,6 @@
                 var reqData = JSON.stringify(data);
                 // create request
                 var xhr = createRequest(s.type, s.url, s.async);
-                xhr.onprogress = ajax.progress;
-                xhr.onreadystatechange = function() {
-                    if (this.readyState === 4) {
-                        if (this.status === 200) {
-                            if (this.responseText)
-                                ajax.success(this.responseText);
-                        } else
-                            ajax.error(this.status);
-                    }
-                };
                 // set Accept data type
                 xhr.setRequestHeader('Accept',
                     s.dataType ? s.accepts[s.dataType] + (s.dataType !== '*' ? ', ' + allTypes + '; q=0.01' : '') : allTypes
@@ -2142,6 +2252,16 @@
                 // set content data type
                 if (s.contentType !== null)
                     xhr.setRequestHeader('Content-type', s.contentType);
+                xhr.onprogress = ajax.progress;
+                xhr.onreadystatechange = function() {
+                    if (this.readyState == 4) {
+                        if (this.status == 200) {
+                            if (this.responseText)
+                                ajax.success(this.responseText);
+                        } else
+                            ajax.error(this.status);
+                    }
+                };
                 xhr.send(reqData);
             },
             success: function(data) {
@@ -2188,7 +2308,7 @@
                 dataParams = JSON.parse(JSON.stringify(par));
             }
             var callfunc = function(callback, data, target, action, id, name) {
-                if (callback != null) {
+                if (callback != null && callback !== 'post') {
                     var fn = 'fnn = function(data, action, id, name) {' + callback + '}';
                     eval(fn);
                     fnn(data, action, id, name);
@@ -2255,7 +2375,8 @@
                     callfunc(callback, data, target, action, id, name);
             }
             if (ajax.ondata('onclick')) {
-                ajax.onclass('bz-cursor-pointer');
+                if (ajax.ondata('cursor') === true)
+                    ajax.onclass('bz-cursor-pointer');
                 callback = ajax.ondata('onclick');
                 ajax.on('click', function() {
                     if (callback === 'submit') {
@@ -2293,7 +2414,7 @@
                                     ajax.append(data);
                                 else if (callback === 'prepend')
                                     ajax.prepend(data);
-                                else if (callback === 'update')
+                                else if (callback === 'update' || callback === 'post')
                                     ajax.inhtml(data);
                             }
                             if (callSuccess != null)
@@ -2332,7 +2453,14 @@
             }
             editable.before(edtBox);
             edtBox.append(editable);
+            if (editable.onattr('placeholder')) {
+                var lbl = bzDom('<label>');
+                lbl.append(placeholder);
+                edtBox.append(lbl);
+            }
             edtBox.append(ldr);
+            if (editable.inhtml() !== '')
+                editable.onclass('valid');
             function saveField(_edit, inpt, _inpt, txt) {
                 var val = _inpt.val();
                 if (val !== '' && val !== txt) {
@@ -2363,6 +2491,8 @@
                         data: dataParams,
                         success: function (data) {
                             _edit.text(val);
+                            if (_edit.inhtml() !== "")
+                                _edit.onclass('valid');
                             _inpt.replacewith(_edit);
                             bz.Loadspin.hide(ldr);
                         },
@@ -2493,29 +2623,6 @@
         if (target)
             bzDom(target).append(sp);
         else return sp;
-    };
-    // add fader
-    Blues.showfader = function(target, zindex) {
-        var defTarget = '.bz-content-to-fade';
-        if (target === null)
-            target = defTarget;
-        target = target || defTarget;
-        zindex = zindex || 8999;
-        var fader = Blues.bzDom('<div>').onclass('bz-fader').oncss('z-index', zindex);
-        Blues.bzDom(target).append(fader);
-        fader.fadeIn();
-        return fader;
-    };
-    // remove fader
-    Blues.hidefader = function(hidecall) {
-        hidecall = hidecall || false;
-        var fader = Blues.bzDom('.bz-fader').fadeOut(500);
-        setTimeout(function() {
-            if (hidecall)
-                hidecall();
-            if (fader)
-                fader.remove();
-        }, 501);
     };
     // scroll to any Dom element
     Blues.bodyScrollTop = function (position) {
@@ -2786,91 +2893,6 @@
             CM.init(ctx);
         });
     };
-    //--> Blues Tabs
-    Blues.Tabs = function(selector, callback) {
-        var jss = {
-            'rule': {
-                '.bz-tabs': {
-                    'attr': {
-                        position: 'relative'
-                    }
-                },
-                '.bz-tabs .bz-tab' : {
-                    'attr': {
-                        cursor: 'pointer',
-                        'text-align': 'center',
-                        padding: '8px',
-                        border: 'none',
-                        'border-bottom': '4px solid var(--color-gray-light)'
-                    }
-                },
-                '.bz-tabs .bz-tab:hover' : {
-                    'attr': {
-                        background: 'var(--color-gray-light)'
-                    }
-                },
-                '.bz-tabs .marker': {
-                    'attr': {
-                        background: 'var(--color-navy)',
-                        height: '4px',
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        '-webkit-transition': 'all 0.5s ease',
-                        '-moz-transition': 'all 0.5s ease',
-                        transition: 'all 0.5s ease'
-                    }
-                },
-                '.bz-tabs-containers': {
-                    'attr': {
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }
-                },
-                '.bz-tabs-containers .bz-container': {
-                    'attr': {
-                        display: 'none'
-                    }
-                },
-                '.bz-tabs-containers .bz-container.show': {
-                    'attr': {
-                        display: 'block'
-                    }
-                }
-
-            }
-        };
-        var css = Blues.JSONCSS(jss);
-        Blues.JSS(css, 'css_tabs');
-
-        var $tabsBox = bzDom(selector);
-        var $tabs = $tabsBox.find('.bz-tab');
-        var $conts = bzDom('#' + $tabsBox.ondata('tabs')).find('.bz-container');
-        var qty = $tabs.el.length;
-        var marker = bzDom('<div class="marker">');
-        var markerW = 100 / qty;
-        marker.oncss('width', markerW + '%');
-        $tabsBox.append(marker);
-        $tabs.each(function(i, item) {
-            var $tab = bzDom(item);
-            $tab.ondata('item', i);
-            $tab.on('click', function() {
-                var $self = bzDom(this),
-                    shift = $self.ondata('item');
-                marker.oncss('left', markerW * shift + '%');
-                $conts.each(function(j, item) {
-                    var $cont = bzDom(item);
-                    $cont.offclass('show');
-                    if (j == shift) {
-                        if (!$cont.ifclass('show'))
-                            $cont.onclass('show');
-                    }
-                });
-                if (callback)
-                    callback(i, item);
-            });
-        });
-    };
     //--> Blues Page Alert
     // types: positive, negative, warning, default
     Blues.Pagealert = function(options) {
@@ -2937,7 +2959,7 @@
     var start = true;
     Blues.JSONCSS = function (jss, depth, breakline) {
         String.prototype.repeat = function (n) {
-            return [].join(this);
+            return new Array(1 + n).join(this);
         };
         var strAttr = function (name, value, depth) {
             return '\t'.repeat(depth) + name + ': ' + value + ';\n';
@@ -2951,9 +2973,9 @@
         var cssString = '';
         if (start)
             cssString = '\n';
-        if (typeof depth === 'undefined')
+        if (typeof depth == 'undefined')
             depth = 0;
-        if (typeof breakline === 'undefined')
+        if (typeof breakline == 'undefined')
             breakline = false;
         if (jss.attr) {
             for (var i in jss.attr) {
