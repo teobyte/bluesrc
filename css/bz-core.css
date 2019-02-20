@@ -1228,7 +1228,8 @@ body.firefox a {
 .bz-content-box:after,
 .bz-input:after,
 .bz-sidenav:after,
-.bz-card:after {
+.bz-card:after,
+.bz-modal .actions:after {
   content: " ";
   display: block;
   font-size: 0;
@@ -1244,7 +1245,8 @@ body.firefox a {
 * html .bz-content-box,
 * html .bz-input,
 * html .bz-sidenav,
-* html .bz-card {
+* html .bz-card,
+* html .bz-modal .actions {
   height: 1px;
   zoom: 1;
 }
@@ -6497,7 +6499,7 @@ body.modal-open {
   padding: 0 8px;
 }
 .bz-modal .content {
-  height: calc(100% - 58px);
+  height: calc(100% + 68px);
   position: relative;
   padding: 8px;
   width: 100%;
@@ -6568,11 +6570,6 @@ body.modal-open {
   bottom: 0;
   left: 0;
   z-index: 0;
-}
-.bz-modal .actions {
-  bottom: -52px;
-  position: absolute;
-  width: calc(100% - 16px);
 }
 .bz-toast-box {
   height: auto;
