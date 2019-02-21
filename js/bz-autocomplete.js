@@ -67,7 +67,8 @@ var Autocomplete = function (inpt, options) {
     if (bzDom(inpt).ondata('ddlmode'))
         this.ddlmode = bzDom(inpt).ondata('ddlmode');
 
-    bzDom(inpt).onattr('autocomplete', 'off');
+    if (!bzDom(inpt).ifattr('autocomplete'))
+        bzDom(inpt).onattr('autocomplete', 'false');
     // init Autocomplete
     this.init();
 };
