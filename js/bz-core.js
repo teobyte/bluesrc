@@ -18,6 +18,12 @@
     }
 })(typeof global === 'object' ? global : this, function() {
     'use strict';
+    // Polyfill
+    Number.isInteger = Number.isInteger || function(value) {
+        return typeof value === 'number' &&
+            isFinite(value) &&
+            Math.floor(value) === value;
+    };
     ///////////////////////////////////////////////////////
     // Blues Start
     var Blues = {};
@@ -127,14 +133,17 @@
         // check if selector have no spaces or special characters
         // returns @true if selector simple
         ifSimpleSelector: function(selector) {
+            var res = false;
             if (!Blues.check.ifWhitespaces(selector)) {
-                return !selector.includes('#', 1) &&
-                    !selector.includes('.', 1) &&
-                    !selector.includes('[', 1) // &&
+                if (!selector.indexOf('#') == 1 && !selector.indexOf('.') == 1 && !selector.indexOf('[') == 1)
+                    res = true;
+                // return !selector.includes('#', 1) &&
+                //     !selector.includes('.', 1) &&
+                //     !selector.includes('[', 1) // &&
                 //!selector.includes(']', selector.length - 1) &&
                 //!selector.includes('=')
-            } else return false;
-
+            }
+            return res;
         },
         // check if selector id double selector
         // returns array of 2 simple selectors
@@ -324,6 +333,12 @@
                 x: posx,
                 y: posy
             }
+        },
+        extendObject: function extend(obj, src) {
+            for (var key in src) {
+                if (src.hasOwnProperty(key)) obj[key] = src[key];
+            }
+            return obj;
         },
         mergeOptions: function(defaultOptions, options) {
             var o = {};
@@ -718,7 +733,7 @@
     // get/set/check the element's attribute
     bzObject.prototype.onattr = function(name, value) {
         var elem = this.el;
-        if (value) {
+        if (value !== null && value !== undefined) {
             elem.setAttribute(name, value);
             return this;
         } else if (elem.hasAttribute(name))
@@ -737,7 +752,7 @@
         var elem = this.el,
             name = 'data-' + name;
         // if method has income value set attribute
-        if (value) {
+        if (value !== null && value !== undefined) {
             elem.setAttribute(name, value);
             return this;
             //if elem has such attribute return it's value
@@ -1121,7 +1136,8 @@
     bzObject.prototype.find = function(selector) {
         var elem = this.el;
         var findingelem;
-        if (typeof selector !== 'string') {
+        if (!selector) return;
+        if (!selector && typeof selector !== 'string') {
             //alert('0');
             return null;
         }
@@ -1250,7 +1266,7 @@
     bzObject.prototype.append = function(child) {
         var elem = this.el,
             key = 0; // to avoid wrong object Detection
-        if (Object.getPrototypeOf(child)  === bzObject.prototype) {
+        if (bz.check.ifObject(child) && Object.getPrototypeOf(child)  === bzObject.prototype) {
             elem.appendChild(child.el);
             return this;
         } else if (key === 0 && (child instanceof Node || child instanceof Window)) {
